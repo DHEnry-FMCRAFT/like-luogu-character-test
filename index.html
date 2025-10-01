@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人品值测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        :root {
+            --lg-green: #4CAF50;
+            --lg-red: #F44336;
+            --lg-blue: #2196F3;
+            --lg-purple: #9C27B0;
+            --lg-gray: #9E9E9E;
+            --white: #ffffff;
+            --text-gray: #666666;
+            --light-gray: #e0e0e0;
+            --shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .fortune-card {
+            background-color: var(--white);
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 24px;
+            text-align: center;
+            max-width: 384px;
+            width: 100%;
+        }
+
+        .fortune-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .fortune-title a {
+            color: var(--lg-green);
+            text-decoration: none;
+        }
+
+        .fortune-title a:hover {
+            text-decoration: underline;
+        }
+
+        .fortune-score {
+            font-size: 18px;
+            margin: 12px 0;
+            /* 修复：默认显示，移除display: none */
+        }
+
+        .score-value {
+            font-weight: 600;
+        }
+
+        .fortune-result {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 16px 0;
+            padding: 8px 24px;
+            border-radius: 6px;
+            display: inline-block;
+            /* 修复：默认显示，移除display: none */
+            min-height: 50px; /* 确保有足够空间显示内容 */
+        }
+
+        .fortune-items {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin: 16px 0;
+            /* 修复：默认显示，移除display: none */
+        }
+
+        @media (min-width: 576px) {
+            .fortune-items {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .lucky-items {
+            color: var(--lg-red);
+            text-align: left;
+        }
+
+        .unlucky-items {
+            color: var(--text-gray);
+            text-align: left;
+        }
+
+        .lg-bold {
+            font-weight: 600;
+        }
+
+        .lg-small {
+            font-size: 14px;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+
+        .test-btn {
+            background-color: var(--lg-green);
+            color: var(--white);
+            border: none;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 8px 24px;
+            margin-top: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .test-btn:hover {
+            background-color: #43A047;
+            transform: scale(1.05);
+        }
+
+        .test-btn:active {
+            transform: scale(0.95);
+        }
+
+        .transition-all {
+            transition: all 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="fortune-card">
+        <h2 class="fortune-title">
+            <a href="#">你的运势</a>
+        </h2>
+        
+        <div id="fortune-score" class="fortune-score">
+            今日人品: <span id="score-value" class="score-value">--</span>
+        </div>
+        
+        <div id="fortune-result" class="fortune-result">
+            § 请点击测算 §
+        </div>
+        
+        <div id="fortune-items" class="fortune-items">
+            <div class="lucky-items" id="lucky-items">
+                <span class="lg-bold">宜：</span>点击测算<br>
+                <span class="lg-small">获取今日建议</span><br>
+            </div>
+            
+            <div class="unlucky-items" id="unlucky-items">
+                <span class="lg-bold">忌：</span>犹豫不前<br>
+                <span class="lg-small">立即行动吧</span><br>
+            </div>
+        </div>
+        
+        <button id="test-btn" class="test-btn">
+            测算人品
+        </button>
+    </div>
+
+    <script>
+        const fortunes = [
+            {
+                name: "宇宙超级凶",
+                color: "var(--lg-purple)",
+                minScore: 0,
+                maxScore: 5,
+                lucky: [
+                    "诸事不宜", "保持静止", "闭目养神", "远离电子设备",
+                    "沉默寡言", "深呼吸", "冥想", "独处"
+                ],
+                luckyDesc: [
+                    "", "一动不如一静", "减少外界干扰", "避免设备故障",
+                    "言多必失", "平复心情", "调整状态", "减少冲突"
+                ],
+                unlucky: [
+                    "诸事不宜", "做重要决定", "接触陌生人", "尝试新事物",
+                    "大额消费", "长途旅行", "签署合同", "与人争执"
+                ],
+                unluckyDesc: [
+                    "", "决策必失误", "可能遇小人", "注定会失败",
+                    "钱财会流失", "路途多舛", "条款不利", "必占下风"
+                ]
+            },
+            {
+                name: "超级凶",
+                color: "var(--lg-red)",
+                minScore: 6,
+                maxScore: 15,
+                lucky: [
+                    "独处", "做简单家务", "看轻松视频", "喝热茶",
+                    "冥想", "写日记", "拉伸身体", "整理旧物"
+                ],
+                luckyDesc: [
+                    "减少人际冲突", "分散注意力", "缓解压力", "温暖身心",
+                    "平复内心", "梳理思绪", "活动筋骨", "断舍离带来好运"
+                ],
+                unlucky: [
+                    "重要考试", "签署合同", "长途旅行", "见重要人物",
+                    "尝试新技能", "处理复杂问题", "借钱给人", "发表意见"
+                ],
+                unluckyDesc: [
+                    "发挥失常", "条款有陷阱", "交通会出问题", "留下坏印象",
+                    "完全学不会", "越弄越复杂", "有借无还", "被群起攻之"
+                ]
+            },
+            {
+                name: "大凶",
+                color: "var(--lg-red)",
+                minScore: 16,
+                maxScore: 29,
+                lucky: [
+                    "装弱", "窝在家里", "刷题", "吃饭",
+                    "整理房间", "听轻音乐", "看老电影", "喝温水"
+                ],
+                luckyDesc: [
+                    "谦虚最好了", "不出门没有危险", "直接AC", "吃的饱饱的再学习",
+                    "环境影响心情", "平复情绪", "避免新刺激", "保护肠胃"
+                ],
+                unlucky: [
+                    "打sdvx", "出行", "玩手机", "吃方便面",
+                    "与人争执", "熬夜", "投资", "参加聚会"
+                ],
+                unluckyDesc: [
+                    "今天状态不好", "路途也许坎坷", "好家伙，直接死机", "没有调味料",
+                    "必占下风", "精神会崩溃", "血本无归", "被人冷落"
+                ]
+            },
+            {
+                name: "小凶",
+                color: "var(--lg-red)",
+                minScore: 30,
+                maxScore: 40,
+                lucky: [
+                    "学习", "研究Ruby", "研究c#", "玩游戏",
+                    "整理桌面", "听播客", "做简单菜", "看教程"
+                ],
+                luckyDesc: [
+                    "都会", "有了新发现", "发现新大陆", "直接胜利",
+                    "提高效率", "增长知识", "不会出错", "收获良多"
+                ],
+                unlucky: [
+                    "发朋友圈", "打开洛谷", "研究C++", "出行",
+                    "参加比赛", "展示作品", "讨论技术", "熬夜编程"
+                ],
+                unluckyDesc: [
+                    "被人当成买面膜的", "大凶", "五行代码198个报错", "路途坎坷",
+                    "必然失利", "被挑毛病", "被人质疑", "Bug层出不穷"
+                ]
+            },
+            {
+                name: "中凶",
+                color: "var(--lg-red)",
+                minScore: 41,
+                maxScore: 50,
+                lucky: [
+                    "扶老奶奶过马路", "上课", "写作业", "写程序",
+                    "做简单任务", "复习旧知识", "整理资料", "适度休息"
+                ],
+                luckyDesc: [
+                    "增加RP", "听懂了", "都会", "没有Bug",
+                    "顺利完成", "温故知新", "条理清晰", "恢复精力"
+                ],
+                unlucky: [
+                    "纳财", "写程序超过500行", "断网", "检测Bug",
+                    "做复杂项目", "参加重要考试", "与人合作", "尝试创新"
+                ],
+                unluckyDesc: [
+                    "没有财运", "99+报错", "连不上了", "503个Bug",
+                    "困难重重", "发挥失常", "意见不合", "难以实现"
+                ]
+            },
+            {
+                name: "中平",
+                color: "var(--lg-gray)",
+                minScore: 51,
+                maxScore: 60,
+                lucky: [
+                    "刷题", "开电脑", "写作业", "睡觉",
+                    "散步", "读课外书", "整理笔记", "简单运动"
+                ],
+                luckyDesc: [
+                    "一次AC", "发现电脑死机了", "全对", "睡足了再学习",
+                    "放松心情", "增长见闻", "加深记忆", "强身健体"
+                ],
+                unlucky: [
+                    "关电脑", "开挂", "纳财", "考试",
+                    "做重大决定", "投资", "换新环境", "与人打赌"
+                ],
+                unluckyDesc: [
+                    "死机了", "被制裁", "你没有财运", "没及格",
+                    "容易后悔", "收益甚微", "适应困难", "必输无疑"
+                ]
+            },
+            {
+                name: "小平",
+                color: "var(--lg-blue)",
+                minScore: 61,
+                maxScore: 70,
+                lucky: [
+                    "发朋友圈", "出去玩", "打游戏", "吃饭",
+                    "听音乐", "看喜剧", "和朋友聊天", "逛公园"
+                ],
+                luckyDesc: [
+                    "点赞量破百", "真开心", "十连胜", "吃饱了",
+                    "心情愉悦", "笑口常开", "增进感情", "呼吸新鲜空气"
+                ],
+                unlucky: [
+                    "膜拜大神", "评论", "研究Java", "吃方便面",
+                    "独自思考", "做计划", "处理琐事", "争论是非"
+                ],
+                unluckyDesc: [
+                    "被人嘲笑", "被喷", "心态崩溃", "只有一包调味料",
+                    "陷入迷茫", "难以执行", "越处理越多", "理亏词穷"
+                ]
+            },
+            {
+                name: "小吉",
+                color: "var(--lg-green)",
+                minScore: 71,
+                maxScore: 80,
+                lucky: [
+                    "吃东西", "打sdvx", "打开洛谷", "出行",
+                    "写代码", "做习题", "看技术文章", "和朋友合作"
+                ],
+                luckyDesc: [
+                    "吃饱了", "今天状态好", "发现AC的题变多了", "路途顺畅",
+                    "思路清晰", "效率超高", "豁然开朗", "事半功倍"
+                ],
+                unlucky: [
+                    "写程序", "使用Unity打包exe", "装弱", "打开CSDN",
+                    "熬夜", "敷衍了事", "单打独斗", "过度消费"
+                ],
+                unluckyDesc: [
+                    "报错19999+", "电脑卡死，发现刚才做的demo全没了", "被人看穿", "被人陷害",
+                    "精神不济", "留下后患", "事倍功半", "钱包空空"
+                ]
+            },
+            {
+                name: "小吉增强版",
+                color: "var(--lg-green)",
+                minScore: 81,
+                maxScore: 88,
+                lucky: [
+                    "挑战难题", "分享代码", "学习新框架", "参加技术交流",
+                    "制定计划", "整理项目", "帮助他人", "尝试创新"
+                ],
+                luckyDesc: [
+                    "轻松解决", "获得赞赏", "快速掌握", "结识大神",
+                    "清晰可行", "发现新价值", "积累人脉", "效果显著"
+                ],
+                unlucky: [
+                    "闭门造车", "忽视警告", "拖延时间", "拒绝合作",
+                    "过度劳累", "忽视健康", "固执己见", "贪图小利"
+                ],
+                unluckyDesc: [
+                    "思路僵化", "埋下隐患", "错失良机", "效率低下",
+                    "精力不济", "影响状态", "错过良策", "因小失大"
+                ]
+            },
+            {
+                name: "中吉",
+                color: "var(--lg-green)",
+                minScore: 89,
+                maxScore: 95,
+                lucky: [
+                    "膜拜大神", "扶老奶奶过马路", "玩网游", "喝可乐",
+                    "学习新技术", "整理代码", "参加讨论", "分享经验"
+                ],
+                luckyDesc: [
+                    "接受神之沐浴", "增加RP", "犹如神助", "真好喝",
+                    "快速掌握", "发现优化点", "收获新见解", "得到认可"
+                ],
+                unlucky: [
+                    "探险", "发视频", "发博客", "给别人点赞",
+                    "固执己见", "忽视细节", "拖延任务", "过度自信"
+                ],
+                unluckyDesc: [
+                    "你失踪了", "被人喷", "阅读量1", "被人嘲笑",
+                    "错失良机", "埋下隐患", "压力倍增", "遭遇挫败"
+                ]
+            },
+            {
+                name: "超级吉",
+                color: "var(--lg-green)",
+                minScore: 96,
+                maxScore: 99,
+                lucky: [
+                    "写程序", "刷题", "偷塔", "上CSDN",
+                    "提交项目", "参加比赛", "展示成果", "学习新知识"
+                ],
+                luckyDesc: [
+                    "不会报错", "直接TLE", "胜利", "发现粉丝涨了200个",
+                    "获得好评", "勇夺佳绩", "掌声雷动", "触类旁通"
+                ],
+                unlucky: [
+                    "点开wx", "刷题", "打吃鸡", "和别人分享你的程序",
+                    "拒绝帮助", "拖延时间", "忽视细节", "骄傲自满"
+                ],
+                unluckyDesc: [
+                    "被人陷害", "WA", "被队友炸死", "别人发现了Bug",
+                    "错失贵人", "机会溜走", "小错酿大祸", "止步不前"
+                ]
+            },
+            {
+                name: "吉上加吉",
+                color: "var(--lg-green)",
+                minScore: 100,
+                maxScore: 100,
+                lucky: [
+                    "攻克难关", "发布作品", "参加重要活动", "做重大决定",
+                    "尝试新事物", "投资学习", "结交新朋友", "展示才华"
+                ],
+                luckyDesc: [
+                    "一举成功", "广受好评", "收获满满", "明智之举",
+                    "惊喜连连", "回报丰厚", "贵人相助", "万众瞩目"
+                ],
+                unlucky: [
+                    "宅在家里", "犹豫不决", "拒绝改变", "忽视健康",
+                    "吝啬分享", "贪图安逸", "怀疑自己", "错失良机"
+                ],
+                unluckyDesc: [
+                    "浪费好运", "错失良机", "停滞不前", "精力不济",
+                    "失去人脉", "错失提升", "埋没才华", "追悔莫及"
+                ]
+            }
+        ];
+        
+        const weights = [2, 3, 4, 10, 12, 15, 15, 16, 7, 10, 1, 0];
+        
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        function selectFortuneByWeight() {
+            const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+            let random = Math.random() * totalWeight;
+            
+            for (let i = 0; i < weights.length; i++) {
+                if (random < weights[i]) {
+                    return i;
+                }
+                random -= weights[i];
+            }
+            return 0;
+        }
+        
+        function generateMatchedScore(fortune) {
+            return randomInt(fortune.minScore, fortune.maxScore);
+        }
+        
+        function getTwoUniqueIndices(max) {
+            const first = randomInt(0, max);
+            let second;
+            do {
+                second = randomInt(0, max);
+            } while (second === first);
+            return [first, second];
+        }
+        
+        function showFortuneResults() {
+            const scoreElement = document.getElementById('fortune-score');
+            const scoreValueElement = document.getElementById('score-value');
+            const resultElement = document.getElementById('fortune-result');
+            const itemsElement = document.getElementById('fortune-items');
+            const luckyElement = document.getElementById('lucky-items');
+            const unluckyElement = document.getElementById('unlucky-items');
+            
+            // 显示加载状态
+            scoreValueElement.textContent = '测算中...';
+            resultElement.textContent = '§ 测算中 §';
+            resultElement.style.cssText = `
+                font-size: 24px;
+                font-weight: 600;
+                margin: 16px 0;
+                padding: 8px 24px;
+                border-radius: 6px;
+                background-color: #f5f5f5;
+                color: #999999;
+                border: 2px solid #999;
+                min-height: 50px;
+            `;
+            
+            luckyElement.innerHTML = `
+                <span class="lg-bold">宜：</span>加载中...<br>
+                <span class="lg-small">加载中...</span><br>
+                <span class="lg-bold">宜：</span>加载中...<br>
+                <span class="lg-small">加载中...</span>
+            `;
+            unluckyElement.innerHTML = `
+                <span class="lg-bold">忌：</span>加载中...<br>
+                <span class="lg-small">加载中...</span><br>
+                <span class="lg-bold">忌：</span>加载中...<br>
+                <span class="lg-small">加载中...</span>
+            `;
+            
+            setTimeout(() => {
+                const fortuneIndex = selectFortuneByWeight();
+                const fortune = fortunes[fortuneIndex];
+                const luckScore = generateMatchedScore(fortune);
+                const luckyIndices = getTwoUniqueIndices(fortune.lucky.length - 1);
+                const unluckyIndices = getTwoUniqueIndices(fortune.unlucky.length - 1);
+                
+                // 更新人品值
+                scoreValueElement.textContent = luckScore;
+                if (luckScore >= 70) {
+                    scoreValueElement.style.color = 'var(--lg-green)';
+                } else if (luckScore >= 50) {
+                    scoreValueElement.style.color = 'var(--lg-blue)';
+                } else {
+                    scoreValueElement.style.color = 'var(--lg-red)';
+                }
+                
+                // 更新运势结果（确保显示§ 运势 §格式）
+                resultElement.textContent = `§ ${fortune.name} §`;
+                resultElement.style.cssText = `
+                    font-size: 24px;
+                    font-weight: 600;
+                    margin: 16px 0;
+                    padding: 8px 24px;
+                    border-radius: 6px;
+                    color: ${fortune.color};
+                    border: 2px solid ${fortune.color};
+                    background-color: ${fortune.color.replace('var(', '').replace(')', '')}20;
+                    min-height: 50px;
+                `;
+                
+                // 更新宜事项
+                let luckyHtml = '';
+                luckyIndices.forEach(idx => {
+                    luckyHtml += `<span class="lg-bold">宜：</span>${fortune.lucky[idx]}<br>
+                                  <span class="lg-small">${fortune.luckyDesc[idx]}</span><br>`;
+                });
+                luckyElement.innerHTML = luckyHtml;
+                
+                // 更新忌事项
+                let unluckyHtml = '';
+                unluckyIndices.forEach(idx => {
+                    unluckyHtml += `<span class="lg-bold">忌：</span>${fortune.unlucky[idx]}<br>
+                                    <span class="lg-small">${fortune.unluckyDesc[idx]}</span><br>`;
+                });
+                unluckyElement.innerHTML = unluckyHtml;
+            }, 1000);
+        }
+        
+        // 页面加载完成后绑定按钮事件
+        document.addEventListener('DOMContentLoaded', () => {
+            const testBtn = document.getElementById('test-btn');
+            // 确保按钮事件正确绑定
+            if (testBtn) {
+                testBtn.addEventListener('click', () => {
+                    testBtn.style.transform = 'scale(0.95)';
+                    setTimeout(() => testBtn.style.transform = 'scale(1)', 200);
+                    showFortuneResults();
+                });
+            } else {
+                console.error("未找到测算按钮，请检查按钮ID是否正确");
+            }
+        });
+    </script>
+</body>
+</html>
